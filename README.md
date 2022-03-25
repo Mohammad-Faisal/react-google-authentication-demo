@@ -141,3 +141,7 @@ Example
 GOOGLE_DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 YOUTUBE_DATA_API_V3 = "https://www.googleapis.com/auth/youtube";
 ```
+
+That's it today!
+
+Article Link:
