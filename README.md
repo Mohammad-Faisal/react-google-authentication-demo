@@ -1,46 +1,143 @@
-# Getting Started with Create React App
+### React Google Login Demo
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+If we need to interact with any google services or just to authenticate a user using google we have to implement the authentication mechanism with google. Some use cases can be
 
-## Available Scripts
+- Uploading files to google drive using ReactJS
+- Interacting with Youtube API from ReactJS
+- Interaction with Google sheets from ReactJS
 
-In the project directory, you can run:
+To implement this there is already a nice library called [login with google](https://www.npmjs.com/package/react-google-login) for us. Let's see how we can use that
 
-### `npm start`
+First install the dependency
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+```sh
+yarn add react-google-login
+```
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### Pre-requisites
 
-### `npm test`
+You will need to have a account on [Google cloud](https://console.cloud.google.com/). If you don't already have that first create a free account and then continue.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+You will also need a google cloud project and get the **CLIENT_ID** from the credentials dashboard. I am assuming you already have that.
 
-### `npm run build`
+### Use the google login
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Then import the GoogleLogin and use it inside the code.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```js
+import React from "react";
+import { GoogleLogin } from "react-google-login";
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+const CLIENT_ID = "YOUR_CLIENT_ID_HERE";
 
-### `npm run eject`
+function Login() {
+  const responseGoogle = (response: any) => {
+    console.log(response.accessToken);
+  };
+  return (
+    <div className="App">
+      <GoogleLogin
+        clientId={CLIENT_ID}
+        buttonText="Login"
+        onSuccess={responseGoogle}
+        onFailure={responseGoogle}
+        cookiePolicy={"single_host_origin"}
+      />
+    </div>
+  );
+}
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+export default Login;
+```
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+If login is successful you will get an **accessToken** and a **tokenId** inside the response object. Save that token inside a state variable or something. You can use this **accessToken** to make further calls to other services.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Logout
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+We can also implement the logout functionality using this same library.
 
-## Learn More
+```js
+import { GoogleLogout } from "react-google-login";
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+function Logout() {
+  const logoutHandler = () => {
+    console.log('successfully logged out!);
+  };
+  return (
+    <GoogleLogout
+      clientId={CLIENT_ID}
+      buttonText="Logout"
+      onLogoutSuccess={logoutHandler}
+    />
+  );
+}
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+export default Logout;
+```
+
+In real life applications we want to use both of this features based on the authentication state. We can combine these 2 features to track the signed in state and show the appropriate component.
+
+The final code will look something like this.
+
+```js
+import { useState } from "react";
+import GoogleLogin, {
+  GoogleLogout,
+  GoogleLoginResponse,
+  GoogleLoginResponseOffline,
+} from "react-google-login";
+
+const CLIENT_ID =
+  "453936919472-efu89ef221p6icp18ivtro5lnui0hv9d.apps.googleusercontent.com";
+
+const SCOPE = "https://www.googleapis.com/auth/drive";
+
+export const GoogleAuthentication = () => {
+  const [isSignedIn, setIsSignedIn] = useState(false);
+
+  const signOutHandler = () => {
+    console.log("logged out!");
+    setIsSignedIn(false);
+  };
+
+  const signInHandler = (
+    response: GoogleLoginResponse | GoogleLoginResponseOffline
+  ) => {
+    console.log(response);
+    setIsSignedIn(true);
+  };
+
+  return (
+    <>
+      {isSignedIn ? (
+        <GoogleLogout
+          clientId={CLIENT_ID}
+          buttonText="Logout"
+          onLogoutSuccess={signOutHandler}
+        />
+      ) : (
+        <GoogleLogin
+          clientId={CLIENT_ID}
+          buttonText="Login"
+          onSuccess={signInHandler}
+          onFailure={signInHandler}
+          cookiePolicy={"single_host_origin"}
+          isSignedIn={true}
+          scope={SCOPE}
+        />
+      )}
+    </>
+  );
+};
+```
+
+You will notice that we have introduced a new variable named **scope** here. In order to make calls to services like Youtube API or Google Drive API we have to define the scopes here.
+
+You can get the scopes from [OAuth2 playground](https://developers.google.com/oauthplayground/)
+
+Example
+
+```js
+GOOGLE_DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
+YOUTUBE_DATA_API_V3 = "https://www.googleapis.com/auth/youtube";
+```
